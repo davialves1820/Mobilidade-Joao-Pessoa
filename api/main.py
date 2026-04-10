@@ -150,6 +150,14 @@ def predict_current(route_id: str):
             # Preenche valores caso o histórico seja curto
             def get_lag(idx, default): return history[idx] if len(history) > idx else default
 
+            # 4. Pega dados de exatamente 7 dias atrás
+            cur.execute(
+                "SELECT duration_in_traffic FROM traffic_records WHERE route_id = %s AND collected_at <= %s ORDER BY collected_at DESC LIMIT 1",
+                (route_id, latest["collected_at"] - timedelta(days=7))
+            )
+            last_week_record = cur.fetchone()
+            last_week_val = last_week_record["duration_in_traffic"] if last_week_record else latest["duration_in_traffic"]
+
             res = predict_delay(
                 rain_mm=float(latest["rain_mm"]),
                 temp_celsius=float(latest["temp_celsius"]),
@@ -161,7 +169,7 @@ def predict_current(route_id: str):
                 rolling_mean_1h=float(sum(stats_1h)/len(stats_1h)),
                 rolling_std_1h=0.0, # simplificado para o dashboard
                 rolling_max_1h=float(max(stats_1h)),
-                same_hour_last_week=float(latest["duration_in_traffic"]), # simplificado
+                same_hour_last_week=float(last_week_val),
                 current_delay_ratio=float(latest["duration_in_traffic"] / latest["duration_seconds"]),
             )
             return PredictResponse(route_id=route_id, **res)

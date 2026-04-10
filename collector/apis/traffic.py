@@ -1,14 +1,8 @@
 """
-Cliente para a API de Direções do OpenRouteService (ORS).
-Substitui o Google Maps Distance Matrix API — completamente gratuito.
+Cliente para a API de Direções da TomTom (Traffic API).
+Substitui o determinismo sintético para buscar tráfego nativamente real na cidade.
 
-Limites do plano gratuito:
-  - 2.000 requisições/dia
-  - 40 requisições/minuto
-  - Sem cartão de crédito
-
-Cadastro gratuito em: https://openrouteservice.org/dev/#/signup
-Documentação: https://openrouteservice.org/dev/#/api-docs/v2/directions
+Acesso: 2.500 requisições/dia grátis.
 """
 
 import os
@@ -17,76 +11,61 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-ORS_KEY = os.environ.get("ORS_API_KEY", "")
-
-# Endpoint de direções de carro
-DIRECTIONS_URL = "https://api.openrouteservice.org/v2/directions/driving-car"
-
+TOMTOM_KEY = os.environ.get("TOMTOM_API_KEY", "")
 
 def fetch_traffic(origin: str, destination: str) -> dict:
     """
-    Consulta o OpenRouteService Directions API e retorna duração e distância.
-
-    Nota: o ORS não fornece dados de trânsito em tempo real (ao contrário do
-    Google Maps). Para simular o impacto do trânsito, aplicamos um fator de
-    congestionamento baseado no horário e nas condições climáticas coletadas
-    separadamente. Isso é feito no módulo principal (main.py).
-
+    Consulta a API TomTom Routing v8/v5 com suporte a tráfego nativo.
+    
     Args:
         origin: "lat,lng" do ponto de origem
         destination: "lat,lng" do ponto de destino
-
-    Returns:
-        dict com duration (segundos), duration_in_traffic (segundos), distance (metros)
     """
+    if not TOMTOM_KEY:
+        logger.warning("TOMTOM_API_KEY ausente.")
+        return _fallback()
+
     try:
-        # ORS espera coordenadas no formato [lng, lat] (GeoJSON)
-        origin_lat, origin_lng = map(float, origin.split(","))
-        dest_lat, dest_lng = map(float, destination.split(","))
+        # TomTom usa formato lat,lng:long,lat (na verdade parece ser lat,lng:lat,lng no teste realizado)
+        tomtom_locations = f"{origin}:{destination}"
 
-        headers = {
-            "Authorization": ORS_KEY,
-            "Content-Type": "application/json",
+        # Parâmetros vitais: computeTravelTimeFor=all traz os dados ideais (sem tráfego) e reais (com tráfego)
+        url = f"https://api.tomtom.com/routing/1/calculateRoute/{tomtom_locations}/json"
+        params = {
+            "key": TOMTOM_KEY,
+            "traffic": "true",
+            "computeTravelTimeFor": "all"
         }
 
-        body = {
-            "coordinates": [
-                [origin_lng, origin_lat],
-                [dest_lng, dest_lat],
-            ],
-            "instructions": False,
-            "preference": "fastest",
-            "units": "m",
-        }
-
-        resp = requests.post(DIRECTIONS_URL, json=body, headers=headers, timeout=10)
+        resp = requests.get(url, params=params, timeout=10)
         resp.raise_for_status()
         data = resp.json()
 
         segment = data["routes"][0]["summary"]
-        duration_s = int(segment["duration"])   # segundos
-        distance_m = int(segment["distance"])   # metros
+        
+        # noTrafficTravelTimeInSeconds: Duração ideal / base
+        # travelTimeInSeconds: Duração real devido ao trânsito / clima
+        duration_s = int(segment.get("noTrafficTravelTimeInSeconds", segment.get("travelTimeInSeconds", 0)))
+        duration_in_traffic = int(segment.get("travelTimeInSeconds", duration_s))
+        distance_m = int(segment.get("lengthInMeters", 0))
 
-        # ORS não tem trânsito em tempo real — o fator de congestionamento
-        # é aplicado pelo coletor com base no horário e na chuva (main.py).
         return {
             "duration": duration_s,
-            "duration_in_traffic": duration_s,  # ajustado no main.py
+            "duration_in_traffic": duration_in_traffic,
             "distance": distance_m,
         }
 
     except requests.exceptions.HTTPError as e:
         if e.response is not None and e.response.status_code == 429:
-            logger.warning("Limite de requisições ORS atingido. Usando fallback.")
+            logger.warning("Limite de requisições TomTom atingido.")
         else:
-            logger.error(f"Erro HTTP ORS: {e}")
+            logger.error(f"Erro HTTP TomTom: {e.response.text if e.response else e}")
         return _fallback()
 
     except Exception as e:
-        logger.error(f"Erro ao consultar OpenRouteService: {e}")
+        logger.error(f"Erro ao consultar TomTom: {e}")
         return _fallback()
 
-
 def _fallback() -> dict:
-    """Retorna zeros em caso de falha para não interromper a coleta."""
+    """Retorna zeros globais em caso de falha."""
     return {"duration": 0, "duration_in_traffic": 0, "distance": 0}

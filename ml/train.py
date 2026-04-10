@@ -70,7 +70,6 @@ def train():
         subsample=0.8,
         colsample_bytree=0.8,
         scale_pos_weight=max(1, int((y == 0).sum() / max((y == 1).sum(), 1))),
-        use_label_encoder=False,
         eval_metric="logloss",
         random_state=42,
         n_jobs=-1,

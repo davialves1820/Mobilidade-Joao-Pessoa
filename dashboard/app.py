@@ -126,20 +126,6 @@ def fetch_health():
         return {"status": "offline", "model_loaded": False, "db_connected": False}
 
 
-def build_mock_prediction(route_id: str) -> dict:
-    """Predição simulada quando o modelo ainda não foi treinado."""
-    import random
-    prob = random.uniform(0.1, 0.9)
-    severity = "alto" if prob > 0.7 else ("médio" if prob > 0.45 else "baixo")
-    return {
-        "route_id": route_id,
-        "delay_probability": round(prob, 3),
-        "alert": prob > 0.55,
-        "severity": severity,
-        "timestamp": datetime.now().isoformat(),
-        "_simulated": True,
-    }
-
 
 @st.cache_data(ttl=60)
 def fetch_prediction(route_id: str):

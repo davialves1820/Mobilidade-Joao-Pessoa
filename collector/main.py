@@ -1,10 +1,10 @@
 """
 Coletor principal — roda a cada 15 minutos via APScheduler.
-Captura dados de tráfego (OpenRouteService) e clima (Open-Meteo)
+Captura dados de tráfego (TomTom Traffic API) e clima (Open-Meteo)
 e salva no PostgreSQL.
 
 APIs usadas — todas gratuitas, sem cartão:
-  - OpenRouteService: roteamento/distância (2.000 req/dia grátis)
+  - TomTom Traffic API: roteamento com trânsito real (2.500 req/dia grátis)
   - Open-Meteo:       clima em tempo real (sem chave, sem limite prático)
 """
 
@@ -67,55 +67,6 @@ ROUTES = [
 scheduler = BlockingScheduler(timezone="America/Recife")
 
 
-def _apply_congestion_factor(duration_s: int, weather: dict) -> int:
-    """
-    O OpenRouteService não tem dados de trânsito em tempo real.
-    Aplicamos um fator empírico de congestionamento baseado em:
-      - Horário de pico (manhã e tarde)
-      - Chuva (aumenta o tempo significativamente em JP)
-      - Dia da semana
-
-    Este fator alimenta a feature `duration_in_traffic` do modelo ML,
-    que aprende a correlação real ao longo do tempo.
-
-    Referência de calibração para JP:
-      - Hora de pico sem chuva: +25 a +40%
-      - Hora de pico com chuva forte: +60 a +90%
-      - Fora do pico, dia de semana: +5 a +15%
-      - Fim de semana: -5 a +10%
-    """
-    now = datetime.now()
-    hour = now.hour
-    weekday = now.weekday()  # 0=seg, 6=dom
-
-    factor = 1.0
-
-    # Pico da manhã (6h–9h)
-    if 6 <= hour < 9:
-        factor += 0.35
-
-    # Pico da tarde (17h–20h)
-    elif 17 <= hour < 20:
-        factor += 0.40
-
-    # Horário intermediário dia útil
-    elif weekday < 5 and 9 <= hour < 17:
-        factor += 0.10
-
-    # Fim de semana — trânsito mais leve
-    elif weekday >= 5:
-        factor -= 0.05
-
-    # Impacto da chuva (João Pessoa: chuvas intensas afetam muito o trânsito)
-    rain_mm = weather.get("rain_1h", 0)
-    if rain_mm > 10:
-        factor += 0.45   # chuva forte
-    elif rain_mm > 3:
-        factor += 0.25   # chuva moderada
-    elif rain_mm > 0.5:
-        factor += 0.10   # garoa
-
-    return int(duration_s * factor)
 
 
 def collect_all():
@@ -133,18 +84,12 @@ def collect_all():
 
     for route in ROUTES:
         try:
-            # OpenRouteService: 1 chamada por rota
+            # Com a TomTom, o trânsito já vem real.
             traffic = fetch_traffic(route["origin"], route["destination"])
 
             if traffic["duration"] == 0:
                 logger.warning(f"Dados zerados para {route['id']}, pulando.")
                 continue
-
-            # Aplica fator de congestionamento empírico
-            duration_in_traffic = _apply_congestion_factor(
-                traffic["duration"], weather
-            )
-            traffic["duration_in_traffic"] = duration_in_traffic
 
             record = {
                 "route_id": route["id"],
