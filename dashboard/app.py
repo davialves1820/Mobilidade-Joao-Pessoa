@@ -164,12 +164,6 @@ with st.sidebar:
     hours_back = st.slider("Histórico (horas)", min_value=1, max_value=24, value=6)
 
     st.divider()
-    st.subheader("📊 Rota para análise")
-    selected_route = st.selectbox(
-        "Selecione uma rota",
-        list(ROUTES_INFO.keys()),
-        format_func=lambda k: ROUTES_INFO[k]["label"],
-    )
 
     if st.button("🔄 Atualizar dados", use_container_width=True):
         st.cache_data.clear()
@@ -305,6 +299,6 @@ else:
 
 st.divider()
 st.caption(
-    "Desenvolvido por Buszer · Modelo XGBoost treinado em dados locais de João Pessoa, PB · "
+    "Modelo XGBoost treinado em dados locais de João Pessoa, PB · "
     f"API: {API_URL}"
 )
