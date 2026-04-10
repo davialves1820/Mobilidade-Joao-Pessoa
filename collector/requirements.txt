@@ -1,0 +1,8 @@
+requests==2.31.0
+psycopg2-binary==2.9.9
+APScheduler==3.10.4
+python-dotenv==1.0.0
+beautifulsoup4==4.12.3
+lxml==5.1.0
+# Open-Meteo não requer SDK — usa requests puro
+# OpenRouteService não requer SDK — usa requests puro
