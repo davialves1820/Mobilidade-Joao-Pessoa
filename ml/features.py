@@ -75,20 +75,37 @@ def build_features(df: pd.DataFrame) -> pd.DataFrame:
         .transform(lambda x: x.shift(1).rolling(window=4, min_periods=1).mean())
     )
 
-    # Target: próxima leitura terá delay_ratio > 1.20?
-    df["target_delayed"] = (
+    # Targets: nas próximas janelas (+15m, +30m, +60m), haverá atraso > 20%?
+    df["target_15m"] = (
         df.groupby("route_id")["current_delay_ratio"]
         .shift(-1)
         .gt(1.20)
         .astype(int)
     )
+    df["target_30m"] = (
+        df.groupby("route_id")["current_delay_ratio"]
+        .shift(-2)
+        .gt(1.20)
+        .astype(int)
+    )
+    df["target_60m"] = (
+        df.groupby("route_id")["current_delay_ratio"]
+        .shift(-4)
+        .gt(1.20)
+        .astype(int)
+    )
 
-    return df.dropna(subset=FEATURE_COLS + ["target_delayed"])
+    # Removemos apenas se faltar as features essenciais. 
+    # Para o target, dropna será feito individualmente no treino para não perder dados de 15m se faltar 60m.
+    return df.dropna(subset=FEATURE_COLS)
 
 
-def get_feature_matrix(df: pd.DataFrame):
+def get_feature_matrix(df: pd.DataFrame, target_col: str = "target_15m"):
     """Retorna X (features) e y (target) para treino."""
     df_feat = build_features(df)
+    # Garante que temos o target para aquela linha
+    df_feat = df_feat.dropna(subset=[target_col])
+    
     X = df_feat[FEATURE_COLS]
-    y = df_feat["target_delayed"]
+    y = df_feat[target_col]
     return X, y

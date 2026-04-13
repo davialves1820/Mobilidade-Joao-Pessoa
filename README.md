@@ -1,8 +1,7 @@
-# 🚌 Mobilidade JP — Monitoramento e Predição de Tráfego em JP
+# 🚌 Mobilidade JP — Predictor
 
-> Sistema de Inteligência Artificial para prever gargalos de mobilidade em João Pessoa, PB.
-> O projeto utiliza a **TomTom Traffic API** para capturar tráfego real e o **Open-Meteo** para clima, 
-> treinando um modelo **XGBoost** para antecipar atrasos críticos nos principais corredores da cidade.
+> Sistema de Inteligência Artificial para antecipar gargalos de tráfego em João Pessoa, PB.
+> Este projeto utiliza a **TomTom Traffic API** para monitorar corredores críticos e modelos **XGBoost** para prever o trânsito com múltiplos horizontes de tempo (+15, +30 e +60 min).
 
 ![Python](https://img.shields.io/badge/Python-3.11-blue)
 ![XGBoost](https://img.shields.io/badge/ML-XGBoost-orange)
@@ -12,110 +11,87 @@
 
 ---
 
-## 📌 O problema
+## 📌 Visão Geral
 
-João Pessoa possui gargalos geográficos e climáticos: o corredor Sul–Centro concentra o fluxo, e chuvas litorâneas intensas alteram drasticamente o deslocamento. Este sistema combina dados de tempo real para prever se uma rota terá atraso severo nos próximos 15 minutos.
+O **Mobilidade JP** vai além de um simples mapa de trânsito em tempo real. Enquanto ferramentas como o Google Maps mostram onde o trânsito *está* ruim agora, nosso sistema utiliza aprendizado de máquina para prever **onde ele estará ruim nos próximos 60 minutos**, permitindo antecipar congestionamentos causados por horários de pico ou chuvas intensas.
 
----
-
-## 🆓 APIs Utilizadas (100% Gratuitas)
-
-| API | Finalidade | Limite Grátis | Chave? |
-|-----|------------|---------------|--------|
-| [TomTom Traffic](https://developer.tomtom.com/) | Tráfego Real e Roteamento | 2.500 req/dia | ✅ Sim |
-| [Open-Meteo](https://open-meteo.com) | Clima (Chuva/Temp) | 10.000 req/dia | ❌ Não |
+### ✨ Principais Funcionalidades
+- **🤖 Previsão Multi-Horizonte**: IA treinada para prever o risco de atraso em 15, 30 e 60 minutos.
+- **📈 Análise de Tendência**: Indicadores visuais que mostram se o trânsito está com tendência de piorar (🔺) ou melhorar (🔻).
+- **🔮 Mapa do Futuro**: Controle deslizante que altera todo o visual da cidade para o estado projetado pela IA.
+- **⚡ Monitoramento Real**: Integração direta com a API da TomTom e Open-Meteo (Clima).
 
 ---
 
-## 🏗️ Arquitetura
+## 🏗️ Arquitetura do Sistema
 
 ```mermaid
 graph TD
-    A[TomTom API - Trânsito Real] --> E[Coletor Python]
+    A[TomTom API - Trânsito] --> E[Coletor Python]
     B[Open-Meteo API - Clima] --> E
     E --> F[(TimescaleDB)]
-    F --> G[ml/train.py - XGBoost]
-    G --> H[FastAPI - Predict Endpoints]
-    H --> I[Streamlit Dashboard]
+    F --> G[ml/train.py - IA Multi-Target]
+    G --> H1[Modelo +15m]
+    G --> H2[Modelo +30m]
+    G --> H3[Modelo +60m]
+    H1 & H2 & H3 --> I[FastAPI Predict]
+    I --> J[Streamlit Dashboard]
 ```
 
 ---
 
-## 🗺️ Rotas Monitoradas (João Pessoa)
-
-1.  **Mangabeira Shopping → Centro**: Principal corredor Sul-Centro.
-2.  **Av. Epitácio Pessoa → Centro**: Fluxo orla e comercial.
-3.  **BR-230 → Mangabeira**: Entrada de carga e fluxo intermunicipal.
-4.  **Altiplano → Centro**: Fluxo zona leste.
-5.  **Bessa → Centro**: Fluxo zona norte.
-
----
-
-## 🚀 Como Rodar (Localmente)
+## 🚀 Como Rodar
 
 ### 1. Pré-requisitos
-- Docker e Docker Compose instalados.
-- Uma chave (API Key) gratuita da [TomTom Developers](https://developer.tomtom.com/).
+- Docker e Docker Compose.
+- Chave de API da [TomTom Developers](https://developer.tomtom.com/).
 
 ### 2. Configuração
-Crie um arquivo `.env` na raiz do projeto (use o `.env.example` como base):
+Crie um arquivo `.env` na raiz:
 ```bash
 TOMTOM_API_KEY=sua_chave_aqui
+DATABASE_URL=postgresql://postgres:davi.2005@db:5432/monitoramento
 ```
 
-### 3. Subir o Sistema
-O projeto é totalmente conteinerizado. Basta rodar:
+### 3. Execução
 ```bash
-docker compose up --build
+docker compose up --build -d
 ```
-Isso iniciará:
-- **Banco de Dados (TimescaleDB)** na porta `5432`.
-- **Coletor de Dados** (roda automaticamente a cada 15 min).
-- **API de Previsão** na porta `8000`.
-- **Dashboard** na porta `8501`.
-
-### 4. Visualizar
-Acesse o painel em: **[http://localhost:8501](http://localhost:8501)**
+Serviços disponíveis:
+- **Dashboard**: [http://localhost:8501](http://localhost:8501)
+- **API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---
 
-## 📊 Treinamento da IA
+## 🧠 Treinamento da IA
 
-O sistema já vem com uma massa de dados sintéticos para calibração inicial. Para treinar o modelo com os dados capturados:
+O sistema utiliza modelos **XGBoost** especializados para cada janela de tempo. Para atualizar os modelos com os dados mais recentes coletados:
+
 ```bash
-# Execute o treinamento via Docker (não precisa instalar nada local)
+# Executa o treinamento multi-horizonte via Docker
 docker compose exec api python ml/train.py
 ```
-*O modelo será salvo em `ml/model.pkl` e carregado automaticamente pela API.*
+*Isso gerará os arquivos `model_15m.pkl`, `model_30m.pkl` e `model_60m.pkl` na pasta da API.*
 
 ---
 
-## ⚠️ Nota sobre Dados Sintéticos
-O script `generate_synthetic_data.py` é incluído para permitir a visualização imediata do dashboard. Para um ambiente de produção real, o coletor deve rodar por pelo menos 7 dias (um ciclo semanal completo) para que a IA aprenda os padrões orgânicos de trânsito de João Pessoa via TomTom.
-
----
-
-## 👤 Autor
+## 🗺️ Rotas Monitoradas
+O sistema foca nos 5 eixos principais de João Pessoa:
+1.  **Mangabeira Mall → Centro** (Principal eixo Sul)
+2.  **Av. Epitácio Pessoa → Centro** (Corredor comercial)
+3.  **BR-230 → Mangabeira** (Fluxo logístico)
+4.  **Altiplano → Centro** (Zona leste)
+5.  **Bessa → Centro** (Zona norte)
 
 ---
 
 ## 📁 Estrutura do Projeto
-
-```
-mobilidade-jp/
-├── collector/
-│   ├── main.py             ← Scheduler (APScheduler)
-│   └── apis/
-│       ├── traffic.py      ← TomTom Traffic API
-│       └── weather.py      ← Open-Meteo API
-├── ml/
-│   ├── features.py         ← Feature Engineering
-│   ├── train.py            ← Treino XGBoost
-│   └── predict.py          ← Inferência
-├── api/
-│   └── main.py             ← FastAPI REST
-└── dashboard/
-    └── app.py              ← Streamlit UI
-```
+- `collector/`: Scraper de tráfego e clima (APScheduler).
+- `ml/`: Engenharia de variáveis e script de treinamento.
+- `api/`: Endpoints FastAPI para servir as predições.
+- `dashboard/`: Interface Streamlit com mapas Folium e gráficos Plotly.
 
 ---
+
+## 👤 Desenvolvedores
+Projeto desenvolvido para otimização da mobilidade urbana em capitais litorâneas.

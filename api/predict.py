@@ -9,16 +9,20 @@ from datetime import datetime
 import joblib
 import numpy as np
 
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "model.pkl")
-
-_model = None
-
+MODELS_DIR = os.path.dirname(__file__)
+_models = {}
 
 def _load_model():
-    global _model
-    if _model is None:
-        _model = joblib.load(MODEL_PATH)
-    return _model
+    global _models
+    if not _models:
+        for hz in ["15m", "30m", "60m"]:
+            path = os.path.join(MODELS_DIR, f"model_{hz}.pkl")
+            if os.path.exists(path):
+                _models[hz] = joblib.load(path)
+            elif hz == "15m" and os.path.exists(os.path.join(MODELS_DIR, "model.pkl")):
+                # Fallback para o modelo antigo
+                _models[hz] = joblib.load(os.path.join(MODELS_DIR, "model.pkl"))
+    return _models
 
 
 def predict_delay(
@@ -37,15 +41,14 @@ def predict_delay(
     dt: datetime | None = None,
 ) -> dict:
     """
-    Retorna a probabilidade de atraso para a próxima janela de 15 minutos.
-
-    Returns:
-        dict com delay_probability (0–1), alert (bool), severity (str)
+    Retorna projeções de atraso para múltiplos horizontes (15, 30, 60 min).
     """
     if dt is None:
         dt = datetime.now()
 
-    model = _load_model()
+    models = _load_model()
+    if not models:
+        raise FileNotFoundError("Nenhum modelo (.pkl) encontrado na pasta da API.")
 
     features = np.array([[
         dt.hour,
@@ -67,18 +70,40 @@ def predict_delay(
         current_delay_ratio,
     ]])
 
-    prob = float(model.predict_proba(features)[0][1])
+    forecasts = {}
+    
+    for hz, model in models.items():
+        prob = float(model.predict_proba(features)[0][1])
+        
+        if prob >= 0.70:
+            severity = "alto"
+        elif prob >= 0.40:
+            severity = "médio"
+        else:
+            severity = "baixo"
+            
+        forecasts[hz] = {
+            "probability": round(prob, 3),
+            "severity": severity,
+            "alert": prob >= 0.55
+        }
 
-    if prob >= 0.75:
-        severity = "alto"
-    elif prob >= 0.50:
-        severity = "médio"
+    # Calcula tendência (baseada na diferença entre 60m e 15m)
+    p15 = forecasts.get("15m", {}).get("probability", 0)
+    p60 = forecasts.get("60m", {}).get("probability", 0)
+    
+    if p60 > p15 + 0.15:
+        trend = "increasing"
+    elif p60 < p15 - 0.15:
+        trend = "decreasing"
     else:
-        severity = "baixo"
+        trend = "stable"
 
     return {
-        "delay_probability": round(prob, 3),
-        "alert": prob >= 0.55,
-        "severity": severity,
+        "delay_probability": p15, # Para retrocompatibilidade
+        "alert": forecasts.get("15m", {}).get("alert", False), # Para retrocompatibilidade
+        "severity": forecasts.get("15m", {}).get("severity", "baixo"), # Para retrocompatibilidade
+        "forecasts": forecasts,
+        "trend": trend,
         "timestamp": dt.isoformat(),
     }

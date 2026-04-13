@@ -10,7 +10,7 @@ dist/
 build/
 
 # Modelo treinado
-ml/model.pkl
+*.pkl
 
 # Dados temporários
 *.zip

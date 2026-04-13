@@ -36,10 +36,22 @@ st.markdown("""
         padding: 16px 20px;
         border-left: 4px solid #0066cc;
         margin-bottom: 12px;
+        position: relative;
+        color: #1a1a1a !important; /* Força cor escura para legibilidade */
+    }
+    .metric-card strong, .metric-card span, .metric-card b {
+        color: #1a1a1a !important;
     }
     .alert-high   { border-left-color: #dc3545; background: #fff5f5; }
     .alert-medium { border-left-color: #fd7e14; background: #fff8f0; }
     .alert-low    { border-left-color: #28a745; background: #f4fff6; }
+    .trend-icon {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        font-size: 1.2em;
+        opacity: 0.8;
+    }
     .stMetric { background: #f0f4ff; border-radius: 10px; padding: 10px; }
 </style>
 """, unsafe_allow_html=True)
@@ -77,6 +89,11 @@ ROUTES_INFO = {
 
 SEVERITY_COLORS = {"alto": "#dc3545", "médio": "#fd7e14", "baixo": "#28a745"}
 SEVERITY_ICONS  = {"alto": "🔴", "médio": "🟡", "baixo": "🟢"}
+TREND_ICONS = {
+    "increasing": "📈 piorando",
+    "decreasing": "📉 melhorando",
+    "stable": "➡️ estável"
+}
 
 
 # ─────────────────────────────────────────────
@@ -155,6 +172,17 @@ with st.sidebar:
     st.markdown(f"**Banco de dados:** {'✅' if health.get('db_connected') else '❌ desconectado'}")
 
     st.divider()
+    st.subheader("🔮 Previsão Futura")
+    horizon_map = {"Agora (+15m)": "15m", "Em 30 min": "30m", "Em 1 hora": "60m"}
+    selected_horizon_label = st.radio(
+        "Visualizar trânsito em:",
+        options=list(horizon_map.keys()),
+        index=0,
+        help="Altera o mapa e os cards para mostrar a probabilidade de atraso no futuro."
+    )
+    horizon_key = horizon_map[selected_horizon_label]
+
+    st.divider()
     st.subheader("🗺️ Configurações do mapa")
     map_style = st.selectbox(
         "Estilo do mapa",
@@ -183,16 +211,31 @@ for col, (route_id, info) in zip(cols, ROUTES_INFO.items()):
     predictions[route_id] = pred
     
     with col:
-        if pred:
-            prob_pct = int(pred["delay_probability"] * 100)
-            severity = pred["severity"]
+        if pred and "forecasts" in pred:
+            f_data = pred["forecasts"].get(horizon_key, pred)
+            prob_pct = int(f_data["probability"] * 100)
+            severity = f_data["severity"]
             icon = SEVERITY_ICONS[severity]
+            trend = pred.get("trend", "stable")
+            trend_icon = "🔺" if trend == "increasing" else ("🔻" if trend == "decreasing" else "🔹")
+            
             st.markdown(
                 f"""<div class="metric-card alert-{severity}">
+                <div class="trend-icon" title="Previsão para 60 min: {trend}">{trend_icon}</div>
                 <strong>{icon} {info['label']}</strong><br>
+                <span style="font-size:1.6em;font-weight:bold">{prob_pct}%</span>
+                <span style="font-size:0.8em;color:#666"> de risco</span><br>
+                <span style="font-size:0.8em">Horizonte: <b>+{horizon_key}</b></span>
+                </div>""",
+                unsafe_allow_html=True,
+            )
+        elif pred: # Fallback para API antiga
+            prob_pct = int(pred["delay_probability"] * 100)
+            severity = pred["severity"]
+            st.markdown(
+                f"""<div class="metric-card alert-{severity}">
+                <strong>{SEVERITY_ICONS[severity]} {info['label']}</strong><br>
                 <span style="font-size:1.8em;font-weight:bold">{prob_pct}%</span>
-                <span style="font-size:0.8em;color:#666"> de chance</span><br>
-                <span style="font-size:0.8em">Risco: <b>{severity.upper()}</b></span>
                 </div>""",
                 unsafe_allow_html=True,
             )
@@ -200,8 +243,7 @@ for col, (route_id, info) in zip(cols, ROUTES_INFO.items()):
             st.markdown(
                 f"""<div class="metric-card" style="border-left: 5px solid #ccc">
                 <strong>⏳ {info['label']}</strong><br>
-                <span style="font-size:1.2em;color:#999">Sem dados</span><br>
-                <span style="font-size:0.8em">Aguardando...</span>
+                <span style="font-size:1.2em;color:#999">Sem dados</span>
                 </div>""",
                 unsafe_allow_html=True,
             )
@@ -212,18 +254,21 @@ for col, (route_id, info) in zip(cols, ROUTES_INFO.items()):
 col_map, col_viz = st.columns([1.5, 1])
 
 with col_map:
-    st.subheader("📍 Mapa de Fluidez")
+    st.subheader(f"📍 Mapa de Fluidez ({selected_horizon_label})")
     m = folium.Map(location=[-7.1150, -34.8500], zoom_start=13, tiles=map_style)
     
     for route_id, info in ROUTES_INFO.items():
         pred = predictions.get(route_id)
         if pred:
-            severity = pred["severity"]
-            prob = pred["delay_probability"]
+            # Usa os dados do horizonte selecionado
+            f_data = pred.get("forecasts", {}).get(horizon_key, pred)
+            severity = f_data.get("severity", "baixo")
+            prob = f_data.get("probability", 0.1)
+            
             color = SEVERITY_COLORS.get(severity, "#28a745")
             folium.PolyLine(
                 locations=info["coords"], color=color, weight=5, opacity=0.8,
-                tooltip=f"{info['label']}: {int(prob*100)}% risco"
+                tooltip=f"{info['label']}: {int(prob*100)}% risco (+{horizon_key})"
             ).add_to(m)
             
     st_folium(m, height=400, width=None, use_container_width=True)
@@ -254,9 +299,9 @@ with col_viz:
         st.info("Coletando dados para o ranking...")
 
 # Legenda
-st.markdown("""
-**Legenda:** 🔴 Alto risco (>70%) &nbsp;|&nbsp; 🟡 Médio (45–70%) &nbsp;|&nbsp; 🟢 Baixo (<45%)
-&nbsp; — Espessura da linha proporcional à probabilidade de atraso.
+st.markdown(f"""
+**Legenda (Previsão {selected_horizon_label}):** 🔴 Alto risco (>70%) &nbsp;|&nbsp; 🟡 Médio (40–70%) &nbsp;|&nbsp; 🟢 Baixo (<40%)
+&nbsp; · Tendência (60 min): 🔺 Piorando &nbsp; 🔻 Melhorando &nbsp; 🔹 Estável
 """)
 
 # ─────────────────────────────────────────────

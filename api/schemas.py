@@ -18,11 +18,18 @@ class PredictRequest(BaseModel):
     current_delay_ratio: float = Field(1.0, description="Razão atual: tempo_tráfego / tempo_normal")
 
 
+class ForecastItem(BaseModel):
+    probability: float
+    severity: str
+    alert: bool
+
 class PredictResponse(BaseModel):
     route_id: str
     delay_probability: float
     alert: bool
     severity: str
+    forecasts: dict[str, ForecastItem] | None = None
+    trend: str | None = "stable"
     timestamp: datetime
 
 

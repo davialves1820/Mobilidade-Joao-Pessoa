@@ -44,7 +44,10 @@ services:
     volumes:
       - ./api/features.py:/app/features.py:ro
       - ./api/predict.py:/app/predict.py:ro
-      - ./ml/model.pkl:/app/model.pkl:ro
+      - ./ml/model_15m.pkl:/app/model_15m.pkl:ro
+      - ./ml/model_30m.pkl:/app/model_30m.pkl:ro
+      - ./ml/model_60m.pkl:/app/model_60m.pkl:ro
+      - ./ml/model.pkl:/app/model.pkl:ro # Compatibilidade
     networks:
       - mobilidade_net
 
