@@ -6,7 +6,7 @@ Expõe endpoints REST para o dashboard Streamlit e integrações externas.
 import os
 import logging
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -182,7 +182,7 @@ def predict_current(route_id: str):
 @app.get("/routes/stats", response_model=list[RouteStats], tags=["dados"])
 def route_stats():
     """Retorna estatísticas agregadas de cada rota nas últimas 24h."""
-    cutoff = datetime.now() - timedelta(hours=24)
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
     with get_conn() as conn:
         cur = conn.cursor(cursor_factory=RealDictCursor)
         cur.execute(
@@ -218,7 +218,7 @@ def route_stats():
 @app.get("/history", tags=["dados"])
 def global_history(hours: int = 6):
     """Retorna histórico de todas as rotas para o gráfico comparativo."""
-    cutoff = datetime.now() - timedelta(hours=hours)
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
     with get_conn() as conn:
         cur = conn.cursor(cursor_factory=RealDictCursor)
         cur.execute(
@@ -245,7 +245,7 @@ def route_history(route_id: str, hours: int = 6):
     """Retorna histórico recente de uma específica."""
     if route_id not in ROUTE_LABELS:
         raise HTTPException(status_code=404, detail="Rota não encontrada.")
-    cutoff = datetime.now() - timedelta(hours=hours)
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
     with get_conn() as conn:
         cur = conn.cursor(cursor_factory=RealDictCursor)
         cur.execute(

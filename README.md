@@ -23,6 +23,17 @@ O **Mobilidade JP** vai além de um simples mapa de trânsito em tempo real. Enq
 
 ---
 
+## 🖼️ Demonstração
+
+### Visão Geral do Dashboard
+![Painel de Controle e Mapa](screenshots/dashboard_overview.png)
+
+### Evolução do Atraso (Histórico)
+![Gráfico de Evolução](screenshots/delay_evolution.png)
+
+### Resumo de Desempenho (24h)
+![Tabela de Resumo](screenshots/performance_summary.png)
+
 ## 🏗️ Arquitetura do Sistema
 
 ```mermaid

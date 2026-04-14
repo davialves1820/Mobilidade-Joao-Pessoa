@@ -11,7 +11,7 @@ import plotly.express as px
 import folium
 import streamlit as st
 from streamlit_folium import st_folium
-from datetime import datetime
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -159,7 +159,7 @@ def fetch_prediction(route_id: str):
 # Layout principal
 # ─────────────────────────────────────────────
 st.title("🚌 Mobilidade Urbana — João Pessoa, PB")
-local_time = datetime.utcnow() - pd.Timedelta(hours=3)
+local_time = datetime.now(timezone.utc) - pd.Timedelta(hours=3)
 st.caption(f"Atualizado em: {local_time.strftime('%d/%m/%Y %H:%M:%S')} (Horário Local) | Dados a cada 15 min")
 
 # Status da API na barra lateral
@@ -280,7 +280,9 @@ with col_viz:
     for r_id, r_info in ROUTES_INFO.items():
         s = stats.get(r_id, {})
         if s:
-            ext_min = (s.get("avg_duration_traffic", 0) - s.get("avg_duration_seconds", 0)) / 60
+            avg_traffic = s.get("avg_duration_traffic") or 0
+            avg_base = s.get("avg_duration_seconds") or 0
+            ext_min = (avg_traffic - avg_base) / 60
             ranking_items.append({
                 "Rota": r_info["label"],
                 "Minutos Extras": round(ext_min if ext_min > 0 else 0, 1)
@@ -318,7 +320,7 @@ if not df_all.empty:
     fig_trend = px.line(
         df_all, x="collected_at", y="delay_min", color="route_name",
         labels={"delay_min": "Atraso (min)", "collected_at": "Horário"},
-        line_shape="spline", template="plotly_white"
+        line_shape="spline", template="plotly_white", markers=True
     )
     fig_trend.update_layout(margin=dict(l=0, r=0, t=10, b=10), legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig_trend, use_container_width=True)
@@ -330,7 +332,9 @@ if stats:
     summary = []
     for r_id, r_info in ROUTES_INFO.items():
         s = stats.get(r_id, {})
-        avg_delay = ((s.get("avg_duration_traffic", 0) / s.get("avg_duration_seconds", 1)) - 1) * 100
+        avg_traffic = s.get("avg_duration_traffic") or 0
+        avg_base = s.get("avg_duration_seconds") or 1
+        avg_delay = ((avg_traffic / avg_base) - 1) * 100
         summary.append({
             "Rota": r_info["label"],
             "Tempo Médio": f"{round(s.get('avg_duration_traffic', 0)/60, 1)} min",
