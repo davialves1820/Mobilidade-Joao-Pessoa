@@ -114,8 +114,3 @@ O sistema foca nos 5 eixos principais de João Pessoa:
 - `ml/`: Engenharia de variáveis e script de treinamento.
 - `api/`: Endpoints FastAPI para servir as predições.
 - `dashboard/`: Interface Streamlit com mapas Folium e gráficos Plotly.
-
----
-
-## 👤 Desenvolvedores
-Projeto desenvolvido para otimização da mobilidade urbana em capitais litorâneas.
