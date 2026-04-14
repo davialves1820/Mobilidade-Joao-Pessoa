@@ -40,6 +40,19 @@ graph TD
 
 ---
 
+## 🔌 APIs Consumidas
+
+O sistema integra dados de múltiplas fontes para alimentar o modelo de inteligência artificial:
+
+1.  **[TomTom Traffic API](https://developer.tomtom.com/traffic-api)**:
+    - **Finalidade**: Fornece dados reais de tempo de percurso, velocidade média e níveis de congestionamento.
+    - **Uso**: É a fonte principal para a variável alvo (atraso real) e para o monitoramento em tempo real dos corredores.
+2.  **[Open-Meteo API](https://open-meteo.com/)**:
+    - **Finalidade**: Coleta condições climáticas (chuva, temperatura, umidade) em João Pessoa.
+    - **Uso**: A chuva é um fator crítico para o trânsito da cidade; esses dados ajudam a IA a entender como o clima impactará o tráfego nos próximos minutos.
+
+---
+
 ## 🚀 Como Rodar
 
 ### 1. Pré-requisitos
