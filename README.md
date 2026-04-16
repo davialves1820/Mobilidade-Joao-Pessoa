@@ -13,7 +13,7 @@
 
 ## 📌 Visão Geral
 
-O **Mobilidade JP** vai além de um simples mapa de trânsito em tempo real. Enquanto ferramentas como o Google Maps mostram onde o trânsito *está* ruim agora, nosso sistema utiliza aprendizado de máquina para prever **onde ele estará ruim nos próximos 60 minutos**, permitindo antecipar congestionamentos causados por horários de pico ou chuvas intensas.
+O **Mobilidade JP** vai além de um simples mapa de trânsito em tempo real. Enquanto ferramentas como o Google Maps mostram onde o trânsito *está* ruim agora, esse sistema utiliza aprendizado de máquina para prever **onde ele estará ruim nos próximos 60 minutos**, permitindo antecipar congestionamentos causados por horários de pico ou chuvas intensas.
 
 ### ✨ Principais Funcionalidades
 - **🤖 Previsão Multi-Horizonte**: IA treinada para prever o risco de atraso em 15, 30 e 60 minutos.
