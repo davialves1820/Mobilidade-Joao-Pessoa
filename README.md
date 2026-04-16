@@ -13,7 +13,7 @@
 
 ## 📌 Visão Geral
 
-O **Mobilidade JP** vai além de um simples mapa de trânsito em tempo real. Enquanto ferramentas como o Google Maps mostram onde o trânsito *está* ruim agora, esse sistema utiliza aprendizado de máquina para prever **onde ele estará ruim nos próximos 60 minutos**, permitindo antecipar congestionamentos causados por horários de pico ou chuvas intensas.
+O **Mobilidade JP** vai além de um simples mapa de trânsito em tempo real. Enquanto ferramentas como o Google Maps mostram onde o trânsito está ruim agora, esse sistema utiliza aprendizado de máquina para prever **onde ele estará ruim nos próximos 60 minutos**, permitindo antecipar congestionamentos causados por horários de pico ou chuvas intensas.
 
 ### ✨ Principais Funcionalidades
 - **🤖 Previsão Multi-Horizonte**: IA treinada para prever o risco de atraso em 15, 30 e 60 minutos.
@@ -92,7 +92,7 @@ Serviços disponíveis:
 O sistema utiliza modelos **XGBoost** especializados para cada janela de tempo (+15m, +30m, +60m). O pipeline foi desenhado seguindo rigorosos critérios técnicos:
 
 ### 1. Estratégia de Validação
-Diferente de modelos genéricos, utilizamos **TimeSeriesSplit** (5-folds). Isso garante que o modelo seja validado apenas em dados futuros em relação ao treino, respeitando a cronologia dos eventos de tráfego e evitando vazamento de dados (*data leakage*).
+Diferente de modelos genéricos, é utilizado **TimeSeriesSplit** (5-folds). Isso garante que o modelo seja validado apenas em dados futuros em relação ao treino, respeitando a cronologia dos eventos de tráfego e evitando vazamento de dados (*data leakage*).
 
 ### 2. Engenharia de Variáveis
 - **Delayed Lags**: Observações de atraso em t-15, t-30, t-60 e t-90.
