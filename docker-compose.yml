@@ -1,4 +1,4 @@
-version: "3.9"
+# version: "3.9"
 
 services:
   db:
@@ -13,7 +13,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d monitoramento"]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d monitoramento" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -48,6 +48,7 @@ services:
       - ./ml/model_30m.pkl:/app/model_30m.pkl:ro
       - ./ml/model_60m.pkl:/app/model_60m.pkl:ro
       - ./ml/model.pkl:/app/model.pkl:ro # Compatibilidade
+      - ./ml:/app/ml
     networks:
       - mobilidade_net
 

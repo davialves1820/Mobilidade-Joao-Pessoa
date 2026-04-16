@@ -74,7 +74,7 @@ O sistema integra dados de múltiplas fontes para alimentar o modelo de intelig�
 Crie um arquivo `.env` na raiz:
 ```bash
 TOMTOM_API_KEY=sua_chave_aqui
-DATABASE_URL=postgresql://postgres:davi.2005@db:5432/monitoramento
+DATABASE_URL=sua_url_aqui
 ```
 
 ### 3. Execução

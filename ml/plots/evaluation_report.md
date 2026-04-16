@@ -3,54 +3,54 @@
 Este documento contém a análise de performance hold-out (últimos 20% dos dados historicos).
 
 ## Horizonte: 15m
-- **AUC-ROC**: 0.9386
+- **AUC-ROC**: 0.9834
 
 ### Relatório de Classificação:
 ```text
               precision    recall  f1-score   support
 
-           0       0.90      0.98      0.94      4404
-           1       0.93      0.72      0.81      1756
+           0       0.94      0.97      0.95      1280
+           1       0.94      0.90      0.92       798
 
-    accuracy                           0.90      6160
-   macro avg       0.91      0.85      0.87      6160
-weighted avg       0.91      0.90      0.90      6160
+    accuracy                           0.94      2078
+   macro avg       0.94      0.93      0.94      2078
+weighted avg       0.94      0.94      0.94      2078
 
 ```
 
 ---
 
 ## Horizonte: 30m
-- **AUC-ROC**: 0.9335
+- **AUC-ROC**: 0.9786
 
 ### Relatório de Classificação:
 ```text
               precision    recall  f1-score   support
 
-           0       0.89      0.96      0.93      4408
-           1       0.89      0.71      0.79      1752
+           0       0.93      0.95      0.94      1281
+           1       0.92      0.88      0.90       797
 
-    accuracy                           0.89      6160
-   macro avg       0.89      0.84      0.86      6160
-weighted avg       0.89      0.89      0.89      6160
+    accuracy                           0.92      2078
+   macro avg       0.92      0.92      0.92      2078
+weighted avg       0.92      0.92      0.92      2078
 
 ```
 
 ---
 
 ## Horizonte: 60m
-- **AUC-ROC**: 0.9320
+- **AUC-ROC**: 0.9809
 
 ### Relatório de Classificação:
 ```text
               precision    recall  f1-score   support
 
-           0       0.91      0.94      0.92      4419
-           1       0.84      0.75      0.79      1741
+           0       0.92      0.97      0.94      1275
+           1       0.95      0.86      0.90       803
 
-    accuracy                           0.89      6160
-   macro avg       0.87      0.85      0.86      6160
-weighted avg       0.89      0.89      0.89      6160
+    accuracy                           0.93      2078
+   macro avg       0.93      0.91      0.92      2078
+weighted avg       0.93      0.93      0.93      2078
 
 ```
 
