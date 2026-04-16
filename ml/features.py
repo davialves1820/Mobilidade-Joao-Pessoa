@@ -69,7 +69,8 @@ def build_features(df: pd.DataFrame) -> pd.DataFrame:
     df["rolling_max_1h"]  = df.groupby("route_id")["duration_in_traffic"].rolling(window=4, min_periods=2).max().reset_index(level=0, drop=True)
 
     # Média histórica da mesma hora, mesmo dia da semana (últimas 4 semanas)
-    # Pegamos o valor da semana passada [shift(1)] e tiramos a média das 4 ocorrências anteriores
+    # NOTA: Usamos .shift(1) antes da média rolante para GARANTIR que não há Data Leakage.
+    # O shift(1) garante que o valor da "semana passada" é o mais recente que o modelo vê.
     df["same_hour_last_week"] = (
         df.groupby(["route_id", "day_of_week", "hour_of_day"])["duration_in_traffic"]
         .transform(lambda x: x.shift(1).rolling(window=4, min_periods=1).mean())

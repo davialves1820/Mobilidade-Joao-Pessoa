@@ -8,6 +8,7 @@ import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 
+import numpy as np
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from fastapi import FastAPI, HTTPException
@@ -167,7 +168,7 @@ def predict_current(route_id: str):
                 lag_60min=float(get_lag(4, latest["duration_in_traffic"])),
                 lag_90min=float(get_lag(6, latest["duration_in_traffic"])),
                 rolling_mean_1h=float(sum(stats_1h)/len(stats_1h)),
-                rolling_std_1h=0.0, # simplificado para o dashboard
+                rolling_std_1h=float(np.std(stats_1h)) if len(stats_1h) > 1 else 0.0,
                 rolling_max_1h=float(max(stats_1h)),
                 same_hour_last_week=float(last_week_val),
                 current_delay_ratio=float(latest["duration_in_traffic"] / latest["duration_seconds"]),

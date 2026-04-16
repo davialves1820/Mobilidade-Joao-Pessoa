@@ -87,8 +87,33 @@ def train():
             n_jobs=-1,
         )
 
-        # Treina no dataset completo (simplificado para multi-modelos)
+        # 1. Validação Temporal (TimeSeriesSplit)
+        tscv = TimeSeriesSplit(n_splits=5)
+        scores = []
+        
+        logger.info(f"Iniciando Validação Cruzada Temporal (5-folds)...")
+        for fold, (train_idx, val_idx) in enumerate(tscv.split(X)):
+            X_train, X_val = X.iloc[train_idx], X.iloc[val_idx]
+            y_train, y_val = y.iloc[train_idx], y.iloc[val_idx]
+            
+            model.fit(X_train, y_train)
+            y_pred = model.predict(X_val)
+            y_prob = model.predict_proba(X_val)[:, 1]
+            
+            auc = roc_auc_score(y_val, y_prob)
+            scores.append(auc)
+            
+            logger.info(f"Fold {fold+1}: AUC-ROC = {auc:.4f} | % Positivos Val: {y_val.mean():.1%}")
+
+        logger.info(f"Média AUC-ROC ({hz}): {np.mean(scores):.4f} (+/- {np.std(scores):.4f})")
+
+        # 2. Treinamento Final no dataset completo
+        logger.info(f"Treinando modelo final para {hz} no dataset completo...")
         model.fit(X, y, verbose=False)
+
+        # 3. Relatório de métricas final (In-sample apenas para referência rápida)
+        y_pred_final = model.predict(X)
+        logger.info(f"\nRelatório de Classificação Final ({hz}):\n{classification_report(y, y_pred_final)}")
 
         path = os.path.join(os.path.dirname(__file__), f"model_{hz}.pkl")
         joblib.dump(model, path)

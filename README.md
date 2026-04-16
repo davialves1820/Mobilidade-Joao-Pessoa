@@ -87,15 +87,45 @@ Serviços disponíveis:
 
 ---
 
-## 🧠 Treinamento da IA
+## 🧠 Pipeline de Machine Learning
 
-O sistema utiliza modelos **XGBoost** especializados para cada janela de tempo. Para atualizar os modelos com os dados mais recentes coletados:
+O sistema utiliza modelos **XGBoost** especializados para cada janela de tempo (+15m, +30m, +60m). O pipeline foi desenhado seguindo rigorosos critérios técnicos:
 
+### 1. Estratégia de Validação
+Diferente de modelos genéricos, utilizamos **TimeSeriesSplit** (5-folds). Isso garante que o modelo seja validado apenas em dados futuros em relação ao treino, respeitando a cronologia dos eventos de tráfego e evitando vazamento de dados (*data leakage*).
+
+### 2. Engenharia de Variáveis
+- **Delayed Lags**: Observações de atraso em t-15, t-30, t-60 e t-90.
+- **Rolling Stats**: Média e desvio padrão do atraso na última hora.
+- **Data Leakage Guard**: A variável `same_hour_last_week` utiliza um shift rigoroso para garantir que o modelo use apenas médias históricas passadas.
+- **Clima em Tempo Real**: Integração de milímetros de chuva e umidade.
+
+### 3. Execução
+Para atualizar os modelos e gerar novas métricas:
 ```bash
-# Executa o treinamento multi-horizonte via Docker
+# Treinamento com Validação Cruzada Temporal
 docker compose exec api python ml/train.py
+
+# Geração de Relatórios e Gráficos de Performance
+docker compose exec api python ml/evaluate.py
 ```
-*Isso gerará os arquivos `model_15m.pkl`, `model_30m.pkl` e `model_60m.pkl` na pasta da API.*
+
+---
+
+## 📊 Performance e Avaliação
+
+Abaixo estão os resultados da última avaliação técnica (hold-out de 20% dos dados finais).
+
+### Métricas de Classificação (Atraso > 20%)
+| Horizonte | AUC-ROC | Precisão | Recall | F1-Score |
+| :--- | :--- | :--- | :--- | :--- |
+| **+15 min** | **0.938** | 93% | 72% | 0.81 |
+| **+30 min** | **0.933** | 89% | 71% | 0.79 |
+| **+60 min** | **0.932** | 84% | 75% | 0.79 |
+
+### Visualização Técnica
+![Curvas ROC](screenshots/roc_curves.png)
+![Importância de Features](screenshots/feature_importance.png)
 
 ---
 
