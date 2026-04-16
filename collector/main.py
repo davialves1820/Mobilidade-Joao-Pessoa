@@ -9,7 +9,6 @@ APIs usadas — todas gratuitas, sem cartão:
 """
 
 import logging
-import math
 from datetime import datetime
 
 from apscheduler.schedulers.blocking import BlockingScheduler

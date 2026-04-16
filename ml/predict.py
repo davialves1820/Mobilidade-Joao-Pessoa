@@ -1,5 +1,5 @@
 """
-Módulo de inferência — carrega o modelo treinado e faz predições.
+Módulo de inferência, carrega o modelo treinado e faz predições.
 Usado tanto pela FastAPI quanto para testes rápidos no terminal.
 """
 

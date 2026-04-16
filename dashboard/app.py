@@ -6,7 +6,6 @@ Visualiza predições de atraso em tempo real com mapa interativo folium.
 import os
 import requests
 import pandas as pd
-import plotly.graph_objects as go
 import plotly.express as px
 import folium
 import streamlit as st

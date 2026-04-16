@@ -1,5 +1,5 @@
 """
-FastAPI — API de predição de atrasos de tráfego em João Pessoa.
+FastAPI, API de predição de atrasos de tráfego em João Pessoa.
 Expõe endpoints REST para o dashboard Streamlit e integrações externas.
 """
 

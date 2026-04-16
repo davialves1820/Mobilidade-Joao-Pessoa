@@ -5,8 +5,6 @@ dos registros brutos do banco de dados.
 """
 
 import pandas as pd
-import numpy as np
-
 
 FEATURE_COLS = [
     # Temporais

@@ -11,7 +11,6 @@ Requisitos: ao menos ~500 registros no banco (≈ 5 dias de coleta contínua).
 import os
 import sys
 import logging
-
 import pandas as pd
 import numpy as np
 import joblib
@@ -20,14 +19,13 @@ from sklearn.model_selection import TimeSeriesSplit
 from sklearn.metrics import (
     classification_report,
     roc_auc_score,
-    confusion_matrix,
 )
 import psycopg2
 from dotenv import load_dotenv
 
 # Permite rodar o script de qualquer pasta
 sys.path.insert(0, os.path.dirname(__file__))
-from features import build_features, get_feature_matrix, FEATURE_COLS
+from features import get_feature_matrix
 
 load_dotenv()
 

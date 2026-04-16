@@ -56,3 +56,17 @@ weighted avg       0.89      0.89      0.89      6160
 
 ---
 
+## Legenda dos Termos
+
+### Colunas:
+- **Precision (Precisão):** Indica a qualidade das predições positivas. Das vezes que o modelo previu "Atraso", qual o percentual de acerto real?
+- **Recall (Revocação):** Indica a capacidade do modelo de encontrar os casos reais. De todos os "Atrasos" que realmente aconteceram, quantos o modelo conseguiu detectar?
+- **F1-Score:** Uma média entre Precisão e Recall. É a melhor métrica única para avaliar modelos com dados desbalanceados.
+- **Support (Suporte):** O número real de ocorrências de cada classe no conjunto de dados testado.
+
+### Linhas:
+- **0:** Classe representando Trânsito Livre (Sem Atraso significativo).
+- **1:** Classe representando Trânsito com Atraso (Congestionamento).
+- **Accuracy (Acurácia):** O percentual total de acertos do modelo (predições corretas divididas pelo total de predições).
+- **Macro Avg:** Média simples das métricas entre as classes, tratando ambas com a mesma importância.
+- **Weighted Avg:** Média das métricas ponderada pelo suporte, dando mais peso para a classe que aparece com mais frequência.
